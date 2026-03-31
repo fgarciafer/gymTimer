@@ -14,6 +14,7 @@ Future<void> main() async {
   Hive.registerAdapter(ExerciseAdapter());
 
   await NotificationService.init();
+  await NotificationService.requestPermission();
 
   runApp(const MyApp());
 }
