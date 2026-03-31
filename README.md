@@ -45,11 +45,14 @@ Clone the repository:
 ```bash
 git clone https://github.com/yourusername/setpause.git
 cd setpause
+```
 
 ### Install dependencies
 ```bash
 flutter pub get
+```
 
 ### Run the app
 ```bash
 flutter run
+```
