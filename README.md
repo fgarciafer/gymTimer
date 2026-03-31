@@ -1,16 +1,55 @@
-# flutter_gym
+# SetPause ⏱️💪
 
-A new Flutter project.
+Minimalist gym rest timer built with Flutter.
 
-## Getting Started
+SetPause helps you manage rest time between sets without unlocking your phone.  
+The timer remains visible on the lock screen, allowing you to stay focused on your workout.
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## ✨ Features
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- ⏱️ 60-second rest timer
+- 🔒 Lock screen notification (Spotify-style persistent notification)
+- 🔔 Sound and vibration when rest time ends
+- 🔁 Restart rest directly from notification
+- 🏋️ Exercise tracking by workout type
+- 🌙 Minimal dark UI
+- ⚡ Fast and distraction-free
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+---
+
+## 📱 Screenshots
+
+*(add screenshots here later)*
+
+Example:
+
+| Timer | Lock screen notification |
+|------|--------------------------|
+| screenshot | screenshot |
+
+---
+
+## 🚀 Getting started
+
+### Requirements
+
+- Flutter 3+
+- Android device or emulator
+
+### Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/yourusername/setpause.git
+cd setpause
+
+### Install dependencies
+```bash
+flutter pub get
+
+### Run the app
+```bash
+flutter run
