@@ -78,7 +78,7 @@ lib/
  │
  └── app.dart
 ```
-# Architecture principles
+### Architecture principles
 - Business logic separated from UI
 - Singleton timer service
 - Persistent notification state
