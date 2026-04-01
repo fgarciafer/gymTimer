@@ -5,17 +5,22 @@ class NotificationService {
   static final _notifications = FlutterLocalNotificationsPlugin();
 
   static const _runningChannelId = 'gym_timer_running_v2';
-  static const _finishedChannelId = 'gym_timer_finished';
+  static const _finishedChannelId = 'gym_timer_finished_v2';
 
   static Future<void> init() async {
     const androidSettings = AndroidInitializationSettings('ic_notification');
 
     const settings = InitializationSettings(android: androidSettings);
 
-    await _notifications.initialize(
-      settings,
-      onDidReceiveNotificationResponse: _handleNotificationResponse,
-    );
+await _notifications.initialize(
+  settings,
+
+  onDidReceiveNotificationResponse:
+      _handleNotificationResponse,
+
+  onDidReceiveBackgroundNotificationResponse:
+      notificationTapBackground,
+);
 
     /// Canal silencioso para el temporizador en curso
     const runningChannel = AndroidNotificationChannel(
@@ -63,7 +68,7 @@ class NotificationService {
         AndroidNotificationAction(
           'action_cancel',
           'Cancelar',
-          showsUserInterface: true,
+          showsUserInterface: false,
         ),
       ],
     );
@@ -150,4 +155,25 @@ class NotificationService {
       print('Permiso de notificaciones denegado');
     }
   }
+}
+
+
+@pragma('vm:entry-point')
+Future<void> notificationTapBackground(
+    NotificationResponse response) async {
+
+  if (response.actionId == 'action_cancel') {
+
+    await NotificationService.cancelTimerNotification();
+
+    TimerService().stop();
+  }
+
+  if (response.actionId == 'action_restart') {
+
+    await NotificationService.cancelTimerNotification();
+
+    TimerService().start();
+  }
+
 }

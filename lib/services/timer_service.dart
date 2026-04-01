@@ -5,9 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'notification_service.dart';
 
 class TimerService {
-
-  static final TimerService _instance =
-      TimerService._internal();
+  static final TimerService _instance = TimerService._internal();
 
   factory TimerService() => _instance;
 
@@ -40,71 +38,57 @@ class TimerService {
   }
 
   void start() {
-
     _timer?.cancel();
 
-    _endTime =
-        DateTime.now().add(
-          const Duration(seconds: initialSeconds),
-        );
+    _endTime = DateTime.now().add(
+      const Duration(seconds: initialSeconds),
+    );
 
     isRunning = true;
 
     _tick();
 
-    _timer =
-        Timer.periodic(
+    _timer = Timer.periodic(
       const Duration(seconds: 1),
       (_) => _tick(),
     );
   }
 
   void _tick() async {
-
+    if (!isRunning) return;
     if (_endTime == null) return;
 
-    final diff =
-        _endTime!
-            .difference(DateTime.now())
-            .inSeconds;
+    final diff = _endTime!.difference(DateTime.now()).inSeconds;
 
-    remainingSeconds =
-        diff.clamp(0, initialSeconds);
+    remainingSeconds = diff.clamp(0, initialSeconds);
 
     if (remainingSeconds == 0) {
-
       _timer?.cancel();
 
       isRunning = false;
 
-      await NotificationService
-          .cancelTimerNotification();
+      await NotificationService.cancelTimerNotification();
 
-      await NotificationService
-          .showTimerFinished();
-    }
-    else {
-
-      await NotificationService
-          .showRunningTimer(
-            remainingSeconds,
-          );
+      await NotificationService.showTimerFinished();
+    } else {
+      await NotificationService.showRunningTimer(
+        remainingSeconds,
+      );
     }
 
     _notify();
   }
 
   void stop() {
-
     _timer?.cancel();
 
-    remainingSeconds =
-        initialSeconds;
+    _endTime = null;
+
+    remainingSeconds = initialSeconds;
 
     isRunning = false;
 
-    NotificationService
-        .cancelTimerNotification();
+    NotificationService.cancelTimerNotification();
 
     _notify();
   }
@@ -112,5 +96,4 @@ class TimerService {
   void dispose() {
     _timer?.cancel();
   }
-
 }
