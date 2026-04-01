@@ -7,14 +7,17 @@ import 'services/notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Hive.initFlutter();
 
-  await Hive.initFlutter();
+    Hive.registerAdapter(WorkoutTypeAdapter());
+    Hive.registerAdapter(ExerciseAdapter());
 
-  Hive.registerAdapter(WorkoutTypeAdapter());
-  Hive.registerAdapter(ExerciseAdapter());
-
-  await NotificationService.init();
-  await NotificationService.requestPermission();
+    await NotificationService.init();
+    await NotificationService.requestPermission();
+  } catch (e) {
+    debugPrint('Error initializing app: $e');
+  }
 
   runApp(const MyApp());
 }
