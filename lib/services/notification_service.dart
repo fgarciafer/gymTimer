@@ -132,20 +132,22 @@ await _notifications.initialize(
         '${remainingSeconds.toString().padLeft(2, '0')} restantes';
   }
 
-  static Future<void> _handleNotificationResponse(
+static Future<void> _handleNotificationResponse(
     NotificationResponse response,
   ) async {
+    // En lugar de llamar a TimerService directamente aquí, 
+    // usamos el mismo mecanismo de SharedPreferences para que funcione igual 
+    // estemos donde estemos.
+    final prefs = await SharedPreferences.getInstance();
+    
     if (response.actionId == 'action_restart') {
-      await cancelTimerNotification();
-      TimerService().start();
+      await prefs.setBool('restart_timer', true);
+    } else if (response.actionId == 'action_cancel') {
+      await prefs.setBool('cancel_timer', true);
     } else if (response.actionId == 'action_dismiss') {
       await cancelTimerNotification();
-    } else if (response.actionId == 'action_cancel') {
-      await cancelTimerNotification();
-      TimerService().stop();
     }
   }
-
   static Future<void> requestPermission() async {
     final androidPlugin = _notifications.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
@@ -160,21 +162,19 @@ await _notifications.initialize(
 
 
 @pragma('vm:entry-point')
-Future<void> notificationTapBackground(
-    NotificationResponse response) async {
-
-  final prefs =
-      await SharedPreferences.getInstance();
-
+Future<void> notificationTapBackground(NotificationResponse response) async {
+  final prefs = await SharedPreferences.getInstance();
+  
   if (response.actionId == 'action_cancel') {
-
-    await prefs.setBool(
-      'cancel_timer',
-      true,
-    );
-
-    await NotificationService
-        .cancelTimerNotification();
+    await prefs.setBool('cancel_timer', true);
   }
 
+  if (response.actionId == 'action_restart') {
+    await prefs.setBool('restart_timer', true);
+    
+    // IMPORTANTE: Como el timer está detenido, el _tick() no lo verá.
+    // Podrías lanzar una notificación de sistema o usar un canal de comunicación
+    // Pero lo más efectivo en Flutter es usar un 'Background Service' si necesitas 
+    // precisión absoluta. 
+  }
 }
