@@ -9,11 +9,15 @@ class TimerService {
 
   factory TimerService() => _instance;
 
-  TimerService._internal();
+  TimerService._internal() {
+    _startHeartbeat();
+  }
 
   static const int initialSeconds = 60;
 
   Timer? _timer;
+
+  Timer? _heartbeat;
 
   DateTime? _endTime;
 
@@ -54,30 +58,34 @@ class TimerService {
     );
   }
 
-  void _tick() async {
+  void stop() async {
     final prefs = await SharedPreferences.getInstance();
-    // Forzar recarga para ver cambios hechos desde otros aislados
-    await prefs.reload();
 
-    final cancelled = prefs.getBool('cancel_timer') ?? false;
-    if (cancelled) {
-      await prefs.remove('cancel_timer'); // Usa await para asegurar limpieza
-      stop();
-      return;
-    }
+    await prefs.remove('cancel_timer');
+    await prefs.remove('restart_timer');
 
-    final restart = prefs.getBool('restart_timer') ?? false;
-    if (restart) {
-      await prefs.remove('restart_timer');
-      start();
-      return;
-    }
+    _timer?.cancel();
 
+    _endTime = null;
+
+    remainingSeconds = initialSeconds;
+
+    isRunning = false;
+
+    await NotificationService.cancelTimerNotification();
+
+    _notify();
+  }
+
+  void _tick() async {
     if (_endTime == null) return;
 
     final diff = _endTime!.difference(DateTime.now()).inSeconds;
 
-    remainingSeconds = diff.clamp(0, initialSeconds);
+    remainingSeconds = diff.clamp(
+      0,
+      initialSeconds,
+    );
 
     if (remainingSeconds == 0) {
       _timer?.cancel();
@@ -96,26 +104,52 @@ class TimerService {
     _notify();
   }
 
-  void stop() async {
+  void _startHeartbeat() {
+    _heartbeat ??= Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _checkPendingActions(),
+    );
+  }
+
+  Future<void> _checkPendingActions() async {
     final prefs = await SharedPreferences.getInstance();
 
-    prefs.remove('cancel_timer');
-    prefs.remove('restart_timer');
+    await prefs.reload();
 
-    _timer?.cancel();
+    final restart = prefs.getBool(
+          'restart_timer',
+        ) ??
+        false;
 
-    _endTime = null;
+    if (restart) {
+      await prefs.remove(
+        'restart_timer',
+      );
 
-    remainingSeconds = initialSeconds;
+      start();
 
-    isRunning = false;
+      return;
+    }
 
-    NotificationService.cancelTimerNotification();
+    final cancel = prefs.getBool(
+          'cancel_timer',
+        ) ??
+        false;
 
-    _notify();
+    if (cancel) {
+      await prefs.remove(
+        'cancel_timer',
+      );
+
+      stop();
+
+      return;
+    }
   }
 
   void dispose() {
     _timer?.cancel();
+
+    _heartbeat?.cancel();
   }
 }

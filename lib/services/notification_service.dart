@@ -1,29 +1,28 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'timer_service.dart';
 
 class NotificationService {
   static final _notifications = FlutterLocalNotificationsPlugin();
 
   static const _runningChannelId = 'gym_timer_running_v2';
+
   static const _finishedChannelId = 'gym_timer_finished_v2';
 
   static Future<void> init() async {
-    const androidSettings = AndroidInitializationSettings('ic_notification');
+    const androidSettings = AndroidInitializationSettings(
+      'ic_notification',
+    );
 
-    const settings = InitializationSettings(android: androidSettings);
+    const settings = InitializationSettings(
+      android: androidSettings,
+    );
 
-await _notifications.initialize(
-  settings,
+    await _notifications.initialize(
+      settings,
+      onDidReceiveNotificationResponse: _handleNotificationResponse,
+      onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
+    );
 
-  onDidReceiveNotificationResponse:
-      _handleNotificationResponse,
-
-  onDidReceiveBackgroundNotificationResponse:
-      notificationTapBackground,
-);
-
-    /// Canal silencioso para el temporizador en curso
     const runningChannel = AndroidNotificationChannel(
       _runningChannelId,
       'Gym Timer running',
@@ -33,29 +32,35 @@ await _notifications.initialize(
       playSound: false,
     );
 
-    /// Canal con sonido para el final del temporizador
     const finishedChannel = AndroidNotificationChannel(
       _finishedChannelId,
       'Gym Timer finished',
       description: 'Fin del descanso',
       importance: Importance.high,
-      sound: RawResourceAndroidNotificationSound('beep'),
+      sound: RawResourceAndroidNotificationSound(
+        'beep',
+      ),
     );
 
     final androidPlugin = _notifications.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
 
-    await androidPlugin?.createNotificationChannel(runningChannel);
-    await androidPlugin?.createNotificationChannel(finishedChannel);
+    await androidPlugin?.createNotificationChannel(
+      runningChannel,
+    );
+
+    await androidPlugin?.createNotificationChannel(
+      finishedChannel,
+    );
   }
 
-  static Future<void> showRunningTimer(int seconds) async {
+  static Future<void> showRunningTimer(
+    int seconds,
+  ) async {
     final androidDetails = AndroidNotificationDetails(
       _runningChannelId,
       'Gym Timer running',
       channelDescription: 'Temporizador activo',
-      importance: Importance.defaultImportance,
-      priority: Priority.defaultPriority,
       ongoing: true,
       autoCancel: false,
       showWhen: false,
@@ -74,13 +79,15 @@ await _notifications.initialize(
       ],
     );
 
-    final notificationDetails = NotificationDetails(android: androidDetails);
+    final details = NotificationDetails(
+      android: androidDetails,
+    );
 
     await _notifications.show(
       1,
       'Descanso',
       _formatTime(seconds),
-      notificationDetails,
+      details,
     );
   }
 
@@ -92,7 +99,9 @@ await _notifications.initialize(
       importance: Importance.high,
       priority: Priority.high,
       playSound: true,
-      sound: RawResourceAndroidNotificationSound('beep'),
+      sound: RawResourceAndroidNotificationSound(
+        'beep',
+      ),
       enableVibration: true,
       visibility: NotificationVisibility.public,
       icon: 'ic_notification',
@@ -110,13 +119,15 @@ await _notifications.initialize(
       ],
     );
 
-    const notificationDetails = NotificationDetails(android: androidDetails);
+    const details = NotificationDetails(
+      android: androidDetails,
+    );
 
     await _notifications.show(
       1,
       'Tiempo cumplido',
       'Ya puedes empezar la siguiente serie 💪',
-      notificationDetails,
+      details,
     );
   }
 
@@ -124,57 +135,66 @@ await _notifications.initialize(
     await _notifications.cancel(1);
   }
 
-  static String _formatTime(int seconds) {
+  static String _formatTime(
+    int seconds,
+  ) {
     final minutes = seconds ~/ 60;
+
     final remainingSeconds = seconds % 60;
 
     return '${minutes.toString().padLeft(2, '0')}:'
         '${remainingSeconds.toString().padLeft(2, '0')} restantes';
   }
 
-static Future<void> _handleNotificationResponse(
+  static Future<void> _handleNotificationResponse(
     NotificationResponse response,
   ) async {
-    // En lugar de llamar a TimerService directamente aquí, 
-    // usamos el mismo mecanismo de SharedPreferences para que funcione igual 
-    // estemos donde estemos.
     final prefs = await SharedPreferences.getInstance();
-    
+
     if (response.actionId == 'action_restart') {
-      await prefs.setBool('restart_timer', true);
-    } else if (response.actionId == 'action_cancel') {
-      await prefs.setBool('cancel_timer', true);
-    } else if (response.actionId == 'action_dismiss') {
+      await prefs.setBool(
+        'restart_timer',
+        true,
+      );
+    }
+
+    if (response.actionId == 'action_cancel') {
+      await prefs.setBool(
+        'cancel_timer',
+        true,
+      );
+    }
+
+    if (response.actionId == 'action_dismiss') {
       await cancelTimerNotification();
     }
   }
+
   static Future<void> requestPermission() async {
     final androidPlugin = _notifications.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
 
-    final granted = await androidPlugin?.requestNotificationsPermission();
-
-    if (granted == false) {
-      print('Permiso de notificaciones denegado');
-    }
+    await androidPlugin?.requestNotificationsPermission();
   }
 }
 
-
 @pragma('vm:entry-point')
-Future<void> notificationTapBackground(NotificationResponse response) async {
+Future<void> notificationTapBackground(
+  NotificationResponse response,
+) async {
   final prefs = await SharedPreferences.getInstance();
-  
-  if (response.actionId == 'action_cancel') {
-    await prefs.setBool('cancel_timer', true);
-  }
 
   if (response.actionId == 'action_restart') {
-    await prefs.setBool('restart_timer', true);
-    
-    // IMPORTANTE: Como el timer está detenido, el _tick() no lo verá.
-    // Podrías lanzar una notificación de sistema o usar un canal de comunicación
-    // Pero lo más efectivo en Flutter es usar un 'Background Service' si necesitas 
-    // precisión absoluta. 
+    await prefs.setBool(
+      'restart_timer',
+      true,
+    );
+  }
+
+  if (response.actionId == 'action_cancel') {
+    await prefs.setBool(
+      'cancel_timer',
+      true,
+    );
   }
 }
