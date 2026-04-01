@@ -17,6 +17,8 @@ class TimerService {
 
   Timer? _timer;
 
+  DateTime? _endTime;
+
   int remainingSeconds = initialSeconds;
 
   bool isRunning = false;
@@ -41,63 +43,74 @@ class TimerService {
 
     _timer?.cancel();
 
-    remainingSeconds = initialSeconds;
+    _endTime =
+        DateTime.now().add(
+          const Duration(seconds: initialSeconds),
+        );
 
     isRunning = true;
 
-    NotificationService.showRunningTimer(remainingSeconds);
+    _tick();
 
-    _notify();
-
-    _timer = Timer.periodic(
+    _timer =
+        Timer.periodic(
       const Duration(seconds: 1),
-      (timer) async {
+      (_) => _tick(),
+    );
+  }
 
-        if (remainingSeconds <= 1) {
+  void _tick() async {
 
-          timer.cancel();
+    if (_endTime == null) return;
 
-          remainingSeconds = 0;
+    final diff =
+        _endTime!
+            .difference(DateTime.now())
+            .inSeconds;
 
-          isRunning = false;
+    remainingSeconds =
+        diff.clamp(0, initialSeconds);
 
-          await NotificationService.cancelTimerNotification();
+    if (remainingSeconds == 0) {
 
-          await NotificationService.showTimerFinished();
+      _timer?.cancel();
 
-        }
-        else {
+      isRunning = false;
 
-          remainingSeconds--;
+      await NotificationService
+          .cancelTimerNotification();
 
-          await NotificationService.showRunningTimer(
+      await NotificationService
+          .showTimerFinished();
+    }
+    else {
+
+      await NotificationService
+          .showRunningTimer(
             remainingSeconds,
           );
+    }
 
-        }
+    _notify();
+  }
 
-        _notify();
+  void stop() {
 
-      },
-    );
+    _timer?.cancel();
+
+    remainingSeconds =
+        initialSeconds;
+
+    isRunning = false;
+
+    NotificationService
+        .cancelTimerNotification();
+
+    _notify();
   }
 
   void dispose() {
     _timer?.cancel();
   }
-
-  void stop() {
-
-  _timer?.cancel();
-
-  remainingSeconds = initialSeconds;
-
-  isRunning = false;
-
-  NotificationService.cancelTimerNotification();
-
-  _notify();
-
-}
 
 }
