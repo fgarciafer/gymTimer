@@ -1,4 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'timer_service.dart';
 
 class NotificationService {
@@ -99,12 +100,12 @@ await _notifications.initialize(
         AndroidNotificationAction(
           'action_restart',
           'Reiniciar',
-          showsUserInterface: true,
+          showsUserInterface: false,
         ),
         AndroidNotificationAction(
           'action_dismiss',
           'Cerrar',
-          showsUserInterface: true,
+          showsUserInterface: false,
         ),
       ],
     );
@@ -162,18 +163,18 @@ await _notifications.initialize(
 Future<void> notificationTapBackground(
     NotificationResponse response) async {
 
+  final prefs =
+      await SharedPreferences.getInstance();
+
   if (response.actionId == 'action_cancel') {
 
-    await NotificationService.cancelTimerNotification();
+    await prefs.setBool(
+      'cancel_timer',
+      true,
+    );
 
-    TimerService().stop();
-  }
-
-  if (response.actionId == 'action_restart') {
-
-    await NotificationService.cancelTimerNotification();
-
-    TimerService().start();
+    await NotificationService
+        .cancelTimerNotification();
   }
 
 }

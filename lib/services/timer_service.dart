@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'notification_service.dart';
 
 class TimerService {
@@ -54,30 +54,56 @@ class TimerService {
     );
   }
 
-  void _tick() async {
-    if (!isRunning) return;
-    if (_endTime == null) return;
+void _tick() async {
 
-    final diff = _endTime!.difference(DateTime.now()).inSeconds;
+  final prefs =
+      await SharedPreferences.getInstance();
 
-    remainingSeconds = diff.clamp(0, initialSeconds);
+  final cancelled =
+      prefs.getBool('cancel_timer') ?? false;
 
-    if (remainingSeconds == 0) {
-      _timer?.cancel();
+  if (cancelled) {
 
-      isRunning = false;
+    prefs.remove('cancel_timer');
 
-      await NotificationService.cancelTimerNotification();
+    stop();
 
-      await NotificationService.showTimerFinished();
-    } else {
-      await NotificationService.showRunningTimer(
-        remainingSeconds,
-      );
-    }
-
-    _notify();
+    return;
   }
+
+  if (_endTime == null) return;
+
+  final diff =
+      _endTime!
+          .difference(DateTime.now())
+          .inSeconds;
+
+  remainingSeconds =
+      diff.clamp(0, initialSeconds);
+
+  if (remainingSeconds == 0) {
+
+    _timer?.cancel();
+
+    isRunning = false;
+
+    await NotificationService
+        .cancelTimerNotification();
+
+    await NotificationService
+        .showTimerFinished();
+  }
+  else {
+
+    await NotificationService
+        .showRunningTimer(
+          remainingSeconds,
+        );
+  }
+
+  _notify();
+
+}
 
   void stop() {
     _timer?.cancel();
